@@ -1,0 +1,50 @@
+{
+  "name": "nxus-s3-files",
+  "version": "3.0.0-0",
+  "description": "AWS S3 file upload module",
+  "main": "lib",
+  "scripts": {
+    "test": "NODE_ENV=test mocha --compilers js:babel-core/register -R spec",
+    "compile": "babel src --out-dir lib",
+    "prepublish": "npm run compile",
+    "postpublish": "npm run docs-readme && npm run commit-update-docs",
+    "docs-readme": "export NAME=`npm view . name`; export VERSION=`npm view . version`; documentation readme ./src/* --github --name $NAME --project-version $VERSION --readme-file ./README.md -s API",
+    "commit-update-docs": "git add ./README.md && git commit -m 'Updated README API Docs' && git push"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/seabourne/nxus-s3-files.git"
+  },
+  "author": "scottmaxson",
+  "license": "MIT",
+  "bugs": {
+    "url": ""
+  },
+  "homepage": "https://github.com/seabourne/nxus-s3-files",
+  "babel": {
+    "presets": [
+      "es2015"
+    ]
+  },
+  "dependencies": {
+    "aws-sdk": "^2.4.12",
+    "bluebird": "^3.3.3",
+    "underscore": "^1.8.3"
+  },
+  "peerDependencies": {
+    "nxus-core": "^3.0.0-0",
+    "nxus-templater": "^3.0.0-0",
+    "nxus-users": "^3.0.0-0"
+  },
+  "devDependencies": {
+    "mocha": "^2.2.5",
+    "should": "^7.0.2",
+    "sinon": "^1.17.2",
+    "chai": "^3.5.0",
+    "documentation": "^4.0.0-beta",
+    "chai-as-promised": "^5.2.0",
+    "babel-preset-es2015": "^6.9.0",
+    "babel-cli": "^6.9.0",
+    "babel-core": "^6.9.0"
+  }
+}
