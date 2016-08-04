@@ -15,7 +15,10 @@
     "type": "git",
     "url": "git+https://github.com/seabourne/nxus-s3-files.git"
   },
-  "author": "scottmaxson",
+  "contributors": 
+    "loppear",
+    "davidkellerman"
+  },
   "license": "MIT",
   "bugs": {
     "url": ""
