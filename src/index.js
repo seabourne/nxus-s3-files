@@ -19,7 +19,7 @@ import Promise from 'bluebird'
  *
  *  * `awsKey`: AWS_ACCESS_KEY
  *  * `awsSecret`: AWS_SECRET_ACCESS_KEY
- *  * `bucketName`: Name of AWS Bucket. Optional, can be overridden in use.
+ *  * `bucketName`: S3_BUCKET_NAME, name of AWS Bucket. Optional, can be overridden in use.
  *  * `directURL`: Route to define for signing a direct upload request. Optional, can be overriden in use.
  * 
  * ## Direct client uploads
@@ -32,7 +32,15 @@ import Promise from 'bluebird'
  * 
  * In your module, reqest `app.get('s3-files').uploadFile(fileName, contents, {Bucket: bucketName})` to send a file to the specified bucket on S3.
  * 
- * 
+ * ## A note on bucket names
+ *
+ * The file URL returned by the upload uses a "virtual-hosted–style"
+ * which includes the bucket name as part of the domain name. For this
+ * to work correctly, you need to provide a DNS-compliant bucket name.
+ * See http://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html
+ * for a detailed description of what this means. In somewhat simplified
+ * terms, it means 3-63 characters consisting of lowercase alphabetics
+ * (no uppercase), numerics, and hypen (-) characters.
  * 
  */
 
