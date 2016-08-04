@@ -1,48 +1,55 @@
 /**
- * S3 File Uploads
- */
-
-import aws from 'aws-sdk'
-import _ from 'underscore'
-import Promise from 'bluebird'
-
-/**
- * Support for direct (client) or processed (server) file uploads to AWS S3
- * 
- * See https://devcenter.heroku.com/articles/s3 for details on configuring S3 buckets for public use.
- * 
- * ## Installation
+ * S3 File Uploads.
  *
- *    > 
+ * A Nxus module for uploading files to AWS S3.
+ * It supports direct (client) or processed (server) file uploads.
  *
- * ## Config
+ * See <https://devcenter.heroku.com/articles/s3> for details on configuring S3 buckets for public use.
  *
- *  * `awsKey`: AWS_ACCESS_KEY
- *  * `awsSecret`: AWS_SECRET_ACCESS_KEY
- *  * `bucketName`: S3_BUCKET_NAME, name of AWS Bucket. Optional, can be overridden in use.
- *  * `directURL`: Route to define for signing a direct upload request. Optional, can be overriden in use.
- * 
- * ## Direct client uploads
- * 
+ * **Installation**
+ *
+ *     > npm install nxus-s3-files --save
+ *
+ * **Module configuration**
+ *
+ * Configuration is through the `s3-files` nxus configuration entry, which
+ * may contain these options:
+ *
+ *   * `awsKey`: AWS_ACCESS_KEY
+ *   * `awsSecret`: AWS_SECRET_ACCESS_KEY
+ *   * `bucketName`: S3_BUCKET_NAME, name of AWS Bucket. Optional, can be overridden in use.
+ *   * `directURL`: Route to define for signing a direct upload request. Optional, can be overriden in use.
+ *
+ * **Direct client uploads**
+ *
  * In your module, request `app.get('s3-files').getUploadURL().then(({url, js}) => {..}`
- * to define a route for signing direct upload requests. Then use the included js' `S3.getSignedRequest(url, file, filename, callback)`
- * to process a form's file input and send it to S3. 
- * 
- * ## Server side uploads
- * 
- * In your module, reqest `app.get('s3-files').uploadFile(fileName, contents, {Bucket: bucketName})` to send a file to the specified bucket on S3.
- * 
- * ## A note on bucket names
+ * to define a route for signing direct upload requests. Then use the
+ * included js' `S3.getSignedRequest(url, file, filename, callback)`
+ * to process a form's file input and send it to S3.
+ *
+ * **Server side uploads**
+ *
+ * In your module, reqest `app.get('s3-files').uploadFile(fileName, contents, {Bucket: bucketName})`
+ * to send a file to the specified bucket on S3.
+ *
+ * **A note on bucket names**
  *
  * The file URL returned by the upload uses a "virtual-hosted–style"
  * which includes the bucket name as part of the domain name. For this
  * to work correctly, you need to provide a DNS-compliant bucket name.
- * See http://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html
+ * See <http://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html>
  * for a detailed description of what this means. In somewhat simplified
- * terms, it means 3-63 characters consisting of lowercase alphabetics
- * (no uppercase), numerics, and hypen (-) characters.
- * 
+ * terms: 3-63 characters consisting of lowercase alphabetics (no
+ * uppercase), numerics, and hypen (-) characters.
+ *
+ * ## API
+ *
  */
+'use strict';
+
+import aws from 'aws-sdk'
+import _ from 'underscore'
+import Promise from 'bluebird'
 
 export default class S3Files {
   constructor(app) {
@@ -62,12 +69,12 @@ export default class S3Files {
       .respond('uploadFile')
 
     this.app.get('router').static(this.config.directURL+"/js", __dirname+"/js")
-    
+
     aws.config.update({
       accessKeyId: this.config.awsKey,
       secretAccessKey: this.config.awsSecret
     })
-    
+
   }
 
   /**
@@ -130,7 +137,7 @@ export default class S3Files {
   fileURL(bucketName, filename) {
     return 'https://'+bucketName+'.s3.amazonaws.com/'+filename
   }
-  
+
   _directURLHandler(bucketName, req, res){
     var s3 = new aws.S3()
     var s3Params = {
