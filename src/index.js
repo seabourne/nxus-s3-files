@@ -47,34 +47,38 @@
  */
 'use strict';
 
+import {NxusModule} from 'nxus-core'
+import {storage} from 'nxus-storage'
+import {router} from 'nxus-router'
+import {users} from 'nxus-users'
+import {templater} from 'nxus-templater'
+
 import aws from 'aws-sdk'
 import _ from 'underscore'
 import Promise from 'bluebird'
+import fs from 'fs'
 
-export default class S3Files {
-  constructor(app) {
-    const _defaultConfig = {
-      awsKey: 'ENV:AWS_ACCESS_KEY',
-      awsSecret: 'ENV:AWS_SECRET_ACCESS_KEY',
-      bucketName: 'ENV:S3_BUCKET_NAME',
-      directURL: '/s3-direct',
-    }
+Promise.promisifyAll(fs)
 
-    app.writeDefaultConfig('s3-files', _defaultConfig)
-    this.config = app.config['s3-files']
+class S3Files extends NxusModule{
+  constructor(opts) {
+    super(opts)
 
-    this.app = app
-    this.app.get('s3-files').use(this)
-      .respond('getUploadURL')
-      .respond('uploadFile')
-
-    this.app.get('router').static(this.config.directURL+"/js", __dirname+"/js")
+    router.staticRoute(this.config.directURL+"/js", __dirname+"/js")
 
     aws.config.update({
       accessKeyId: this.config.awsKey,
       secretAccessKey: this.config.awsSecret
     })
+  }
 
+  _userConfig() {
+    return {
+      awsKey: 'ENV:AWS_ACCESS_KEY',
+      awsSecret: 'ENV:AWS_SECRET_ACCESS_KEY',
+      bucketName: 'ENV:S3_BUCKET_NAME',
+      directURL: '/s3-direct',
+    }
   }
 
   /**
@@ -91,18 +95,20 @@ export default class S3Files {
    * @returns {object} url: and js: keys.
    */
   getUploadURL(options) {
-    let config = Object.assign({
+    let config = {
       includeScript: false,
-      adminOnly: true
-    }, this.config, options)
-    this.app.get('router').route('GET', config.directURL, _.bind(this._directURLHandler, this, config.bucketName))
-    if (config.adminOnly) {
-      this.app.get('users').ensureAdmin(config.directURL)
+      adminOnly: true, 
+      ...this.config, 
+      ...options
     }
+    router.route('GET', config.directURL, _.bind(this._directURLHandler, this, config.bucketName))
+    // if (config.adminOnly) {
+    //   users.ensureAdmin(config.directURL)
+    // }
     let jsURL = this.config.directURL+"/js/s3direct.js"
       // TO DO: is this right? (always uses configured directURL)
     if (config.includeScript) {
-      this.app.get('templater').on('renderContext.'+config.includeScript, () => {
+      templater.on('renderContext.'+config.includeScript, () => {
         return {scripts: [jsURL]}
       })
     }
@@ -149,7 +155,7 @@ export default class S3Files {
     }
     s3.getSignedUrl('putObject', s3Params, (err, data) => {
       if(err){
-        this.app.log.error(err)
+        this.log.error(err)
       }
       else{
         var returnData = {
@@ -162,3 +168,6 @@ export default class S3Files {
     })
   }
 }
+
+const s3files = S3Files.getProxy()
+export {S3Files as default, s3files}
