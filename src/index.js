@@ -15,9 +15,9 @@
  * Configuration is through the `s3-files` nxus configuration entry, which
  * may contain these options:
  *
- *   * `awsKey`: AWS_ACCESS_KEY
- *   * `awsSecret`: AWS_SECRET_ACCESS_KEY
- *   * `bucketName`: S3_BUCKET_NAME, name of AWS Bucket. Optional, can be overridden in use.
+ *   * `awsKey`: AWS access key
+ *   * `awsSecret`: AWS secret access key
+ *   * `bucketName`: Default AWS Bucket name. Optional, can be overridden in use.
  *   * `directURL`: Route to define for signing a direct upload request. Optional, can be overriden in use.
  *
  * **Direct client uploads**
@@ -45,20 +45,16 @@
  * ## API
  *
  */
-'use strict';
+'use strict'
 
 import {NxusModule} from 'nxus-core'
-import {storage} from 'nxus-storage'
 import {router} from 'nxus-router'
-import {users} from 'nxus-users'
 import {templater} from 'nxus-templater'
 
 import aws from 'aws-sdk'
 import _ from 'underscore'
-import Promise from 'bluebird'
-import fs from 'fs'
 
-Promise.promisifyAll(fs)
+const fileURLRE = /^https:\/\/(.*?)\.s3\.amazonaws.com\/(.*)$/i
 
 class S3Files extends NxusModule{
   constructor(opts) {
@@ -74,9 +70,9 @@ class S3Files extends NxusModule{
 
   _userConfig() {
     return {
-      awsKey: 'ENV:AWS_ACCESS_KEY',
-      awsSecret: 'ENV:AWS_SECRET_ACCESS_KEY',
-      bucketName: 'ENV:S3_BUCKET_NAME',
+      awsKey: '',
+      awsSecret: '',
+      bucketName: '',
       directURL: '/s3-direct',
     }
   }
@@ -120,28 +116,68 @@ class S3Files extends NxusModule{
    * Upload a file to S3.
    * @param {string} filename Name of file on S3.
    * @param {String|Buffer} contents The file contents.
-   * @param {object} [s3Options] Additional parameters for S3 putObject.
-   *   For example, you can specify a `Bucket` parameter to select the
-   *   AWS Bucket for the upload, overriding the configuration setting.
+   * @param {object} [s3Options] Additional parameters for S3
+   *   `putObject()`. For example, you can specify a `Bucket` parameter
+   *   to select the AWS Bucket for the upload, overriding the
+   *   configuration setting.
    * @returns {String} URL of uploaded file.
    */
   uploadFile(filename, contents, s3Options={}) {
-    var s3 = new aws.S3()
-    Promise.promisifyAll(Object.getPrototypeOf(s3))
-    var s3Params = Object.assign({
-      Bucket: this.config.bucketName,
-      Key: filename,
-      Body: contents,
-      Expires: 60,
-      ACL: 'public-read'
-    }, s3Options)
-    return s3.putObjectAsync(s3Params).then((data) => {
-      return this.fileURL(s3Params.Bucket, s3Params.Key)
+    let s3 = new aws.S3(),
+        params = {
+          Bucket: this.config.bucketName,
+          Key: filename,
+          Body: contents,
+          Expires: 60,
+          ACL: 'public-read',
+          ...s3Options}
+    return new Promise((resolve, reject) => {
+      s3.putObject(params, (err, data) => {
+        if (err) { reject(err); return }
+        resolve(this.assembleFileURL(params.Key, params.Bucket))
+      })
     })
   }
 
-  fileURL(bucketName, filename) {
-    return 'https://'+bucketName+'.s3.amazonaws.com/'+filename
+  /** Deletes a file from S3.
+   * @param {string} filename Name of the file on S3.
+   * @param {object} [s3Options] Additional parameters for S3
+   *   `deleteObject()`. For example, you can specify a `Bucket`
+   *   parameter to select the AWS Bucket for the delete, overriding the
+   *   configuration setting.
+   */
+  deleteFile(filename, s3Options = {}) {
+    let s3 = new aws.S3(),
+        params = {
+          Bucket: this.config.bucketName,
+          Key: filename,
+          ...s3Options}
+    return new Promise((resolve, reject) => {
+      s3.deleteObject(params, (err, data) => {
+        if (err) { reject(err); return }
+        resolve()
+      })
+    })
+  }
+
+  /** Assembles a fully-qualified URL for an S3 file.
+   * @param {string} filename Name of file on S3.
+   * @param {string} [bucket] Name of bucket in which the file is stored.
+   *   If not specified, the default bucket name is used.
+   * @returns {string} URL of file.
+   */
+  assembleFileURL(filename, bucket) {
+    return `https://${bucket}.s3.amazonaws.com/${filename}`
+  }
+
+  /** Disassembles a fully-qualified URL for an S3 file.
+   * @param {string} url URL of file on S3.
+   * @returns {Object} Object with `filename` and `bucket` properties.
+   *   Undefined if URL could not be parsed as an S3 file specifier.
+   */
+  disassembleFileURL(url) {
+    let m = fileURLRE.exec(url)
+    if (m) return {filename: m[2], bucket: m[1]}
   }
 
   _directURLHandler(bucketName, req, res){
@@ -160,7 +196,7 @@ class S3Files extends NxusModule{
       else{
         var returnData = {
           signed_request: data,
-          url: this.fileURL(bucketName, req.query.fileName)
+          url: this.assembleFileURL(req.query.fileName, bucketName)
         }
         res.write(JSON.stringify(returnData))
         res.end()
