@@ -18,9 +18,9 @@ See <https://devcenter.heroku.com/articles/s3> for details on configuring S3 buc
 Configuration is through the `s3-files` nxus configuration entry, which
 may contain these options:
 
--   `awsKey`: AWS_ACCESS_KEY
--   `awsSecret`: AWS_SECRET_ACCESS_KEY
--   `bucketName`: S3_BUCKET_NAME, name of AWS Bucket. Optional, can be overridden in use.
+-   `awsKey`: AWS access key
+-   `awsSecret`: AWS secret access key
+-   `bucketName`: Default AWS Bucket name. Optional, can be overridden in use.
 -   `directURL`: Route to define for signing a direct upload request. Optional, can be overriden in use.
 
 **Direct client uploads**
@@ -73,8 +73,44 @@ Upload a file to S3.
 
 -   `filename` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** Name of file on S3.
 -   `contents` **([String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String) \| [Buffer](https://nodejs.org/api/buffer.html))** The file contents.
--   `s3Options` **\[[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)]** Additional parameters for S3 putObject.
-      For example, you can specify a `Bucket` parameter to select the
-      AWS Bucket for the upload, overriding the configuration setting.
+-   `s3Options` **\[[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)]** Additional parameters for S3
+      `putObject()`. For example, you can specify a `Bucket` parameter
+      to select the AWS Bucket for the upload, overriding the
+      configuration setting.
 
 Returns **[String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** URL of uploaded file.
+
+### deleteFile
+
+Deletes a file from S3.
+
+**Parameters**
+
+-   `filename` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** Name of the file on S3.
+-   `s3Options` **\[[object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)]** Additional parameters for S3
+      `deleteObject()`. For example, you can specify a `Bucket`
+      parameter to select the AWS Bucket for the delete, overriding the
+      configuration setting.
+
+### assembleFileURL
+
+Assembles a fully-qualified URL for an S3 file.
+
+**Parameters**
+
+-   `filename` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** Name of file on S3.
+-   `bucket` **\[[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)]** Name of bucket in which the file is stored.
+      If not specified, the default bucket name is used.
+
+Returns **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** URL of file.
+
+### disassembleFileURL
+
+Disassembles a fully-qualified URL for an S3 file.
+
+**Parameters**
+
+-   `url` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** URL of file on S3.
+
+Returns **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** Object with `filename` and `bucket` properties.
+  Undefined if URL could not be parsed as an S3 file specifier.

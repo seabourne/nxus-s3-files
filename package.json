@@ -1,12 +1,12 @@
 {
   "name": "nxus-s3-files",
-  "version": "4.0.0-0",
+  "version": "4.0.0-1",
   "description": "AWS S3 file upload module",
   "main": "lib",
   "scripts": {
     "preversion": "npm test",
     "postversion": "npm run build-docs && git push && git push --tags",
-    "test": "NODE_ENV=test mocha --compilers js:babel-core/register -R spec test/*.js src/modules/**/test/*.js",
+    "test": "NODE_ENV=test mocha --compilers js:babel-core/register -R spec test/*.js",
     "compile": "babel src --out-dir lib",
     "prepublish": "npm run compile",
     "build-docs": "export NAME=`npm view . name`; export VERSION=`npm view . version`; documentation readme ./src/*.js --name $NAME --project-version $VERSION --readme-file ./README.md -s $NAME",
@@ -27,17 +27,9 @@
   "dependencies": {
     "aws-sdk": "^2.4.12",
     "babel-plugin-transform-object-rest-spread": "^6.20.2",
-    "bluebird": "^3.3.3",
-    "csv-parse": "^1.0.2",
-    "csv-stringify": "^1.0.2",
-    "morph": "^0.2.0",
-    "multer": "^1.1.0",
     "nxus-core": "^4.0.0-2",
     "nxus-router": "^4.0.0-0",
-    "nxus-storage": "^4.0.0-0",
     "nxus-templater": "^4.0.0-0",
-    "nxus-users": "^4.0.0-0",
-    "terraformer-arcgis-parser": "^1.0.4",
     "underscore": "^1.8.3"
   },
   "devDependencies": {
