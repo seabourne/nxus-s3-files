@@ -1,0 +1,111 @@
+<link rel="import" href="../../../../bower_components/polymer/polymer.html">
+
+<dom-module id="direct-s3-upload">
+  <template>
+    <template is="dom-if" if="{{error}}">
+      <div class="row bg-danger">{{error}}</div>
+    </template>
+    <template is="dom-if" if="{{_image(url, loading)}}">
+      <div class="pull-right"><img style=$"{max-width: 150px;}" src="{{_image(url, loading)}}" /></div>
+    </template>
+    <input type="file" class="form-control" on-change="_upload" />
+    <template is="dom-if" if="{{showUrlField}}">
+      or
+    </template>
+    <input type="{{_fieldType(showUrlField)}}" class="form-control" value="{{url}}" placeholder="Enter URL" name="{{name}}" />
+  </template>
+  </template>
+  <script>
+   (function() {
+       class DirectS3Upload {
+           beforeRegister() {
+               this.is = 'direct-s3-upload'
+               this.properties = {
+                   signUrl: {
+                       type: String
+                   },
+                   showUrlField: {
+                       type: Boolean,
+                       value: true
+                   },
+                   name: {
+                       type: String
+                   },
+                   url: {
+                       type: String,
+                       notify: true
+                   },
+                   loading: {
+                       type: Boolean,
+                       value: false,
+                       notify: true
+                   },
+                   error: {
+                       type: String,
+                       value: "",
+                       notify: true
+                   }
+               }
+           }
+
+           _upload(e) {
+               let file = e.target.files[0]
+               this.getSignedRequest(this.signUrl, file, null, (url) => {
+                   this.set("url", url)
+               })
+           }
+
+           uploadFile(file, signed_request, url, callback){
+               var xhr = new XMLHttpRequest()
+               xhr.open("PUT", signed_request)
+               xhr.setRequestHeader('x-amz-acl', 'public-read')
+               xhr.onload = () => {
+                   if (xhr.status === 200) {
+                       this.set("loading", false)
+                       callback(url)
+                   }
+               }
+               xhr.onerror = () => {
+                   this.set("loading", false)
+                   this.set("error", "Could not upload file." + xhr) 
+               };
+               xhr.send(file);
+           }
+           getSignedRequest(signURL, file, fileName, callback){
+               if (fileName == null) {
+                   fileName = file.name
+               }
+               this.set("loading", true)
+               var xhr = new XMLHttpRequest()
+               xhr.open("GET", signURL+"?fileName="+fileName+"&fileType="+file.type)
+               xhr.onreadystatechange = () =>{
+                   if(xhr.readyState === 4){
+                       if(xhr.status === 200){
+                           var response = JSON.parse(xhr.responseText)
+                           this.uploadFile(file, response.signed_request, response.url, callback)
+                       }
+                       else{
+                           this.set("error", "Could not get signed URL." + xhr)
+                       }
+                   }
+               };
+               xhr.send()
+           }
+
+           _image(url, loading) {
+               if (loading) {
+                   return "/assets/img/loading.gif"
+               } else if (url) {
+                   return url
+               }
+           }
+
+           _fieldType(flag) {
+               return flag ? 'url' : 'hidden'
+           }
+
+       }
+       Polymer(DirectS3Upload)
+   })()
+  </script>
+</dom-module>
