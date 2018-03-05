@@ -19,6 +19,7 @@
  *   * `awsSecret`: AWS secret access key
  *   * `bucketName`: Default AWS Bucket name. Optional, can be overridden in use.
  *   * `directURL`: Route to define for signing a direct upload request. Optional, can be overriden in use.
+ *   * `s3Options`: Options to `aws.
  *
  * **Direct client uploads**
  *
@@ -68,12 +69,18 @@ class S3Files extends NxusModule{
     })
   }
 
+  _defaultConfig() {
+    return {
+      s3Options: {}
+    }
+  }
+  
   _userConfig() {
     return {
       awsKey: '',
       awsSecret: '',
       bucketName: '',
-      directURL: '/s3-direct',
+      directURL: '/s3-direct'
     }
   }
 
@@ -123,7 +130,7 @@ class S3Files extends NxusModule{
    * @returns {String} URL of uploaded file.
    */
   uploadFile(filename, contents, s3Options={}) {
-    let s3 = new aws.S3(),
+    let s3 = new aws.S3(this.config.s3Options),
         params = {
           Bucket: this.config.bucketName,
           Key: filename,
@@ -147,7 +154,7 @@ class S3Files extends NxusModule{
    *   configuration setting.
    */
   deleteFile(filename, s3Options = {}) {
-    let s3 = new aws.S3(),
+    let s3 = new aws.S3(this.config.s3Options),
         params = {
           Bucket: this.config.bucketName,
           Key: filename,
@@ -181,7 +188,7 @@ class S3Files extends NxusModule{
   }
 
   _directURLHandler(bucketName, req, res){
-    var s3 = new aws.S3()
+    var s3 = new aws.S3(this.config.s3Options)
     var s3Params = {
       Bucket: bucketName,
       Key: req.query.fileName,
